@@ -1,0 +1,7 @@
+
+<div id="export">
+    <ul class="menu">
+        <li><a id="gff-link" href="[% gff_uri %]">GFF3</a></li>
+        <li><a id="fasta-link" href="[% fasta_uri %]">Fasta</a></li>
+    </ul>
+</div>

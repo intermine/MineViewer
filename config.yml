@@ -37,7 +37,7 @@ plugins:
             dsn: "dbi:SQLite:dbname=./data/usercomments.db"
 
 service_args:
-    - "metabolicmine"
+    - "MetabolicMine"
     - 'alzheimers@intermine.org'
     - 'alzheimers-pass'
 
@@ -48,3 +48,6 @@ gene_list_names:
 update_interval: 600
 
 mine_base_url: "http://www.metabolicmine.org/test"
+
+cache_file: './data/memoize_cache.db'
+cache_lifetime: 3600

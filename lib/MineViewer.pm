@@ -1,10 +1,27 @@
-package AlzheimersMine;
+package MineViewer;
 use Dancer ':syntax';
 use Dancer::Plugin::DBIC;
 use Dancer::Plugin::ProxyPath;
 
 # For caching results we do not expect to change
-use Memoize;
+use Attribute::Memoize;
+
+=head1 VERSION
+
+Software release version: 0.01
+
+Changes:
+
+=over
+
+=item * 0.01 - Initial release
+
+Support for lists in a specific mine, and user comments 
+on a per gene basis.
+
+=back
+
+=cut
 
 our $VERSION = '0.1';
 
@@ -33,34 +50,39 @@ get '/' => sub {
 
     my @lists = map {$service->list($_)} @$list_names;
 
+    return template index => {lists => [@lists]};
+};
+
+get '/lists' => sub {
+
+    my @lists = map {$service->list($_)} @$list_names;
+
     return send_error("No gene lists found", 500) unless @lists;
 
     my $genes = get_genes_in_list($lists[0]);
 
-    template index => {
+    template lists => {
         genes => $genes, 
         lists => [@lists],
-        gff_uri => proxy->uri_for('/' . $lists[0]->name . '.gff3'),
-        fasta_uri => proxy->uri_for('/' . $lists[0]->name . '.fasta'),
+        gff_uri => proxy->uri_for('/list/' . $lists[0]->name . '.gff3'),
+        fasta_uri => proxy->uri_for('/list/' . $lists[0]->name . '.fasta'),
     };
 };
 
-memoize('get_genes_in_list');
-sub get_genes_in_list {
+sub get_genes_in_list :Memoize {
     my $list = shift;
     $list->query->set_sort_order('Gene.symbol' => 'asc');
     my $genes = $list->results(RESULT_OPTIONS);
     return $genes;
 }
 
-get '/:list.gff3' => sub {
+get '/list/:list.gff3' => sub {
     content_type 'text/plain';
     header 'Content-Disposition' => 'attachment: filename=' . params->{list} . '.gff3';
     return get_list_gff3(params->{list});
 };
 
-memoize('get_list_gff3');
-sub get_list_gff3 {
+sub get_list_gff3 :Memoize {
     my $list_name = shift;
     my $list = $service->list($list_name) or die "Cannot find list $list_name";
     my $query = $service->new_query(class => 'Gene', with => GFF3);
@@ -69,7 +91,7 @@ sub get_list_gff3 {
     return $query->get_gff3;
 }
 
-get '/:list.fasta' => sub {
+get '/list/:list.fasta' => sub {
     my $list = $service->list(params->{list});
     my $query = $service->new_query(class => 'Gene', with => FASTA);
     $query->add_constraint('Gene', 'IN', $list);
@@ -78,23 +100,22 @@ get '/:list.fasta' => sub {
     return $query->get_fasta;
 };
 
-get '/:list' => sub {
+get '/list/:list' => sub {
     my @lists = map {$service->list($_)} params->{list};
 
     return send_error("No gene lists found", 500) unless @lists;
 
     my $genes = get_genes_in_list($lists[0]);
 
-    template index => {
+    template lists => {
         genes => $genes, 
         lists => [@lists],
-        gff_uri => proxy->uri_for('/' . $lists[0]->name . '.gff3'),
-        fasta_uri => proxy->uri_for('/' . $lists[0]->name . '.fasta'),
+        gff_uri => proxy->uri_for('/list/' . $lists[0]->name . '.gff3'),
+        fasta_uri => proxy->uri_for('/list/' . $lists[0]->name . '.fasta'),
     };
 };
 
-memoize('get_gff_url');
-sub get_gff_url {
+sub get_gff_url :Memoize{
     my $identifier = shift;
     my $gff_query = $service->new_query(class => 'Gene', with => GFF3);
     $gff_query->add_sequence_features(qw/Gene Gene.exons Gene.transcripts/);
@@ -102,16 +123,14 @@ sub get_gff_url {
     return $gff_query->get_gff3_uri;
 }
 
-memoize('get_fasta_url');
-sub get_fasta_url {
+sub get_fasta_url :Memoize{
     my $identifier = shift;
     my $fasta_query = $service->new_query(class => 'Gene', with => FASTA);
     $fasta_query->add_constraint('Gene', 'LOOKUP', $identifier);
     return $fasta_query->get_fasta_uri;
 }
 
-memoize('get_gene_details');
-sub get_gene_details {
+sub get_gene_details :Memoize{
     my $identifier = shift;
     my $query = $service->new_query(class => 'Gene');
     $query->add_views('symbol', 'primaryIdentifier', 'summary', 'organism.name', 
@@ -124,8 +143,7 @@ sub get_gene_details {
     return $gene;
 }
 
-memoize('get_homologues');
-sub get_homologues{
+sub get_homologues :Memoize{
     my $identifier = shift;
     my $homologue_query = $service->new_query(class => 'Gene');
     $homologue_query->add_views(qw/primaryIdentifier symbol organism.name/);

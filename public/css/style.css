@@ -81,7 +81,7 @@ table.details tr td{
 }
 
 ul.menu li:hover, ul.menu li:hover a {
-    color: black;
+    color: #555;
     background-color: white;
 }
 
@@ -92,6 +92,14 @@ ul.menu a {
     font-weight: bold;
 }
 
+ul.menu li.current-tab, ul.menu li.current-tab a {
+    background-color: white;
+    color: #555;
+}
+
+td.location {
+    font-family: monospace;
+}
 
 #sidebar {
 float: right;

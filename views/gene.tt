@@ -13,7 +13,7 @@
             <tr>
                 [% location = gene.chromosome.primaryIdentifier _ ":" _ gene.chromosomeLocation.start _ '-' _ gene.chromosomeLocation.end %]
                 <td class="key">Location:</td>
-                <td class="value">[% location %]</td>
+                <td class="value location">[% location %]</td>
             </tr>
         [% END %]
         [% IF gene.summary %]
@@ -34,8 +34,7 @@
                 [% homologue_link = proxy.uri_for('/gene/' _ homologue.primaryIdentifier) %]
             [% END %]
             <li><a href="[% homologue_link %]">[% homologue_display %]</a>
-                [% IF homologue_display != homologue.primaryIdentifier %] ([% homologue.primaryIdentifier %])[% END %]
-                [% homologue.organism.name %]
+                <i>[% homologue.organism.name %]</i>
             </li>
         [% END %]
         </ul>

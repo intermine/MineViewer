@@ -35,19 +35,18 @@ plugins:
     DBIC:
         usercomments: 
             dsn: "dbi:SQLite:dbname=./data/usercomments.db"
-
-service_args:
-    - "MetabolicMine"
-    - 'alzheimers@intermine.org'
-    - 'alzheimers-pass'
-
-gene_list_names: 
-    - "alzheimer_pw_genes"
-    - "alzheimers_gwas"
+            options:
+                sqlite_unicode: 1
 
 update_interval: 600
 
-mine_base_url: "http://www.metabolicmine.org/test"
-
 cache_file: './data/memoize_cache.db'
 cache_lifetime: 3600
+
+class_keys:
+    Default: 
+        - "primaryIdentifier"
+    Gene:
+        - "symbol"
+        - "primaryIdentifier"
+        - "secondaryIdentifier"

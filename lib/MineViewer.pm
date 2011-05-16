@@ -53,27 +53,47 @@ get '/' => sub {
     return template index => {lists => [@lists]};
 };
 
+get '/templates' => sub {
+    return template 'templates';
+};
+
 get '/lists' => sub {
 
     my @lists = map {$service->list($_)} @$list_names;
 
     return send_error("No gene lists found", 500) unless @lists;
 
-    my $genes = get_genes_in_list($lists[0]);
+    my $items = get_items_in_list($lists[0]);
 
     template lists => {
-        genes => $genes, 
+        class_keys => get_class_keys_for($lists[0]->type),
+        items => $items, 
         lists => [@lists],
         gff_uri => proxy->uri_for('/list/' . $lists[0]->name . '.gff3'),
         fasta_uri => proxy->uri_for('/list/' . $lists[0]->name . '.fasta'),
     };
 };
 
-sub get_genes_in_list :Memoize {
+sub get_items_in_list :Memoize {
     my $list = shift;
-    $list->query->set_sort_order('Gene.symbol' => 'asc');
-    my $genes = $list->results(RESULT_OPTIONS);
-    return $genes;
+    my $main_field = get_class_keys_for($list->type)->[0];
+    my $query = $list->query;
+    $query->set_sort_order($list->type . '.' . $main_field => 'asc');
+    add_extra_views_to_query($list->type, $query);
+
+    my $items = $list->results(as => 'hashrefs');
+    return $items;
+}
+
+sub get_class_keys_for :Memoize {
+    my $class = shift;
+    my $class_keys = setting('class_keys');
+    if (my $keys = $class_keys->{$class}) {
+        debug("Returning " . to_dumper($keys));
+        return $keys;
+    } else {
+        return $class_keys->{Default};
+    }
 }
 
 get '/list/:list.gff3' => sub {
@@ -101,18 +121,21 @@ get '/list/:list.fasta' => sub {
 };
 
 get '/list/:list' => sub {
+
     my @lists = map {$service->list($_)} params->{list};
 
     return send_error("No gene lists found", 500) unless @lists;
 
-    my $genes = get_genes_in_list($lists[0]);
+    my $items = get_items_in_list($lists[0]);
 
     template lists => {
-        genes => $genes, 
+        class_keys => get_class_keys_for($lists[0]->type),
+        items => $items, 
         lists => [@lists],
         gff_uri => proxy->uri_for('/list/' . $lists[0]->name . '.gff3'),
         fasta_uri => proxy->uri_for('/list/' . $lists[0]->name . '.fasta'),
     };
+
 };
 
 sub get_gff_url :Memoize{
@@ -130,17 +153,49 @@ sub get_fasta_url :Memoize{
     return $fasta_query->get_fasta_uri;
 }
 
-sub get_gene_details :Memoize{
+sub add_extra_views_to_query {
+    my ($type, $query, $not_outer_joins) = (@_, []);
+    my %dont_outer_join = map {$_ => 1} @$not_outer_joins;
+    if (my $extra_views = setting('additional_summary_fields')->{$type}) {
+        $query->add_views(@$extra_views);
+        for (@$extra_views) {
+            next if $dont_outer_join{$_};
+            my @parts = split(/\./);
+            my $join_path = shift @parts;
+            do {
+                $query->add_outer_join($join_path);
+                $join_path .= '.' . shift @parts;
+            } while (@parts);
+        }
+    }
+}
+
+sub get_item_query :Memoize {
+    my $type = ucfirst(shift);
     my $identifier = shift;
-    my $query = $service->new_query(class => 'Gene');
-    $query->add_views('symbol', 'primaryIdentifier', 'summary', 'organism.name', 
-        'chromosome.primaryIdentifier',
-        'chromosomeLocation.start', 'chromosomeLocation.end');
-    $query->add_outer_join('chromosome');
-    $query->add_outer_join('chromosomeLocation');
-    $query->add_constraint('Gene', 'LOOKUP', $identifier);
-    my ($gene) = $query->results(RESULT_OPTIONS);
-    return $gene;
+    my @ids = split(/;/, $identifier);
+    my $query = $service->new_query(class => $type);
+    $query->add_views('*');
+    if (@ids == 1) {
+        add_extra_views_to_query($type, $query);
+        $query->add_constraint($type, 'LOOKUP', $ids[0]);
+    } else {
+        my $class_keys = get_class_keys_for($type);
+        add_extra_views_to_query($type, $query, $class_keys);
+        for (my $i = 0; $i < @$class_keys; $i++) {
+            my $path = $class_keys->[$i];
+            my $value = $ids[$i];
+            debug("Adding constraint: $path = $value");
+            $query->add_constraint($path, '=', $value);
+        }
+    }
+    return $query;
+}
+
+sub get_item_details :Memoize {
+    my $query = get_item_query(@_);
+    my ($item) = $query->results(RESULT_OPTIONS);
+    return $item;
 }
 
 sub get_homologues :Memoize{
@@ -154,16 +209,12 @@ sub get_homologues :Memoize{
 }
 
 get '/gene/:id' => sub {
-
-    my $gene = get_gene_details(params->{id})
-        or return template gene_error => {id => params->{id}};
+    my $gene = get_item_details(gene => params->{id})
+        or return template gene_error => params;
 
     my $display_name = $gene->{symbol} || $gene->{primaryIdentifier};
     my $identifier = $gene->{primaryIdentifier} || $gene->{symbol};
-
-    my $gene_rs = schema('usercomments')->resultset('Gene')
-                                        ->find_or_create({identifer => $identifier});
-    my @comments = $gene_rs->comments->get_column('value')->all;
+    my @comments = get_user_comments($identifier);
 
     # Generate Links for Sequence export
     my $gff_uri = get_gff_url($identifier);
@@ -182,12 +233,68 @@ get '/gene/:id' => sub {
     };
 };
 
+get '/:type/:id' => sub {
+    my $type = ucfirst(params->{'type'});
+    my $query = get_item_query($type, params->{'id'});
+
+    my ($item) = $query->results(as => 'hashrefs')
+        or return template item_error => params;
+    my ($obj) = $query->results(RESULT_OPTIONS)
+        or return template item_error => params;
+
+    my $keys = get_class_keys_for($type);
+    my $identifier = join(';', map { defined($item->{"$type.$_"}) ? $item->{"$type.$_"} : ''} 
+                            @$keys);
+
+    my $displayname;
+    for my $k (@$keys) {
+        $displayname = $item->{"$type.$k"};
+        last if $displayname;
+    }
+
+    my @comments = get_user_comments($identifier);
+
+    debug("Rendering report for " . to_dumper($item));
+
+    return template item => {
+        item        => $item, 
+        templates => get_subtemplate_for_type($type),
+        obj         => $obj,
+        identifier   => $identifier, 
+        displayname => $displayname,
+        comments    => [@comments],
+    };
+};
+
+sub get_subtemplate_for_type :Memoize {
+    my $type = lc(shift);
+    if (-f "views/${type}_templates.tt") {
+        return "${type}_templates.tt";
+    }
+    my $cd = $service->model->get_classdescriptor_by_name(ucfirst($type));
+    for my $parent ($cd->parental_class_descriptors) {
+        if (my $t = get_subtemplate_for_type($parent)) {
+            return $t;
+        }
+    }
+    return '';
+}
+
+sub get_user_comments {
+    # TODO - change DB schema so it refers to items
+    my $identifier = shift;
+    my $gene_rs = schema('usercomments')->resultset('Gene')
+                                        ->find_or_create({identifer => $identifier});
+    my @comments = $gene_rs->comments->get_column('value')->all;
+    return @comments;
+}
+
+
 post '/addcomment' => sub {
     my $id = params->{id};
     my $comment = params->{comment};
     my $gene_rs = schema('usercomments')->resultset('Gene')->find_or_create({identifer => $id});
     $gene_rs->add_to_comments({value => $comment});
-    $gene_rs->update;
     return to_json({id => $id, comment => $comment});
 };
 
@@ -195,8 +302,7 @@ post '/removecomment' => sub {
     my $id = params->{geneid};
     my $comment = params->{commenttext};
     my $gene_rs = schema('usercomments')->resultset('Gene')->find_or_create({identifer => $id});
-    my $comments = $gene_rs->search_related('comments', {value => $comment});
-    $comments->delete();
+    $gene_rs->delete_related('comments', {value => $comment});
     return to_json({id => $id, comment => $comment});
 };
 

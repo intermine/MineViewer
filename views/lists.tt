@@ -2,20 +2,29 @@
 <div id="content">
     [% IF lists.size == 1 %]
         [% list = lists.0 %]
-        <h2>[% list.name %] [% list.size %]</h2>
+        <h2>[% list.name %] ([% list.size %] [% list.type %]s) </h2>
     [% ELSE %]
         <select id="lists">
         [% FOREACH list IN lists %]
-            <option value="[% list.name %]">[% list.name %] [% list.size %]</option>
+            <option value="[% list.name %]">[% list.name %] ([% list.size %] [% list.type %]s) </option>
         [% END %]
         </select>
     [% END %]
-    <div id="gene-list-box">
-    <ul id="gene-list">
-        [% FOREACH gene IN genes %]
-            [% displayname = gene.symbol || gene.primaryIdentifier %]
-            [% identifier = gene.primaryIdentifier || gene.symbol %]
-<li><a href="[% proxy.uri_for('/gene/' _ identifier) %]">[% displayname %]</a></li>
+    <div id="list-item-box">
+    <ul id="list-items">
+        [% FOREACH item IN items %]
+            [% values = [] %]
+            [% itemname = '' %]
+            [% FOREACH key IN class_keys %]
+                [% access_key = lists.0.type _ '.' _ key %]
+                [% values.push(item.$access_key) %]
+                [% UNLESS itemname %]
+                    [% itemname = item.$access_key %]
+                [% END %]
+            [% END %]
+            [% itemid = values.join(';') %]
+            [% type = lists.0.type FILTER lower %]
+<li><a href="[% proxy.uri_for('/' _ type _ '/' _ itemid) %]">[% itemname %]</a></li>
         [% END %]
     </ul>
     </div>
@@ -25,13 +34,13 @@
 
 <script type="text/javascript">
 jQuery(function() {
-    jQuery('#gene-list').makeacolumnlists({cols: 4, colWidth: 0, equalHeight: true, startN: 1});
+    jQuery('#list-items').makeacolumnlists({cols: 5, colWidth: 0, equalHeight: true, startN: 1});
     jQuery('#lists').change(function() {
         var listname = jQuery('#lists option:selected').val();
-        jQuery('#gene-list-box').load("[% proxy.uri_for('/list/') %]" + listname + ' #gene-list',
+        jQuery('#list-item-box').load("[% proxy.uri_for('/list/') %]" + escape(listname) + ' #list-items',
             null, function() {
-            jQuery('#gene-list').makeacolumnlists({
-                cols: 4, colWidth: 0, 
+            jQuery('#list-items').makeacolumnlists({
+                cols: 5, colWidth: 0, 
                 equalHeight: true, startN: 1
                 })
             });

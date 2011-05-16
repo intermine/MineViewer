@@ -1,0 +1,34 @@
+
+[% INCLUDE banner.tt %]
+
+<div id="content">
+    <h2 class="displayname">[% displayname %]</h2>
+    <table class="details">
+        [% FOREACH key IN item.keys.sort %]
+            [% parts = key.split('\.') %]
+            [% IF parts.size == 2 %]
+                [% label = parts.pop %]
+            [% ELSE %]
+                [% label = parts.slice(-2).join %]
+            [% END %]
+            [% IF item.$key.defined %]
+                <tr>
+                    <td class="key">[% label | ucfirst %]:</td>
+                    <td class="value">[% item.$key %]</td>
+                </tr>
+            [% END %]
+        [% END %] 
+    </table>
+
+    [% INCLUDE user_comments.tt %]
+
+    [% IF templates %]
+        [% INCLUDE $templates %]
+    [% END %]
+
+</div>
+
+<div class="content-end footerbar"></div>
+
+
+

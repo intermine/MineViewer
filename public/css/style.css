@@ -26,6 +26,19 @@ a  {color: #03c}
     padding: 4px;
 }
 
+img.throbber {
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.placeholder-text {
+    border: 3px solid #ddd;
+    font-family: 'Judson', helvetica, arial, serif;
+    font-size: 14px;
+}
+
+
 
 #page {
 background-color: #ddd;
@@ -47,7 +60,7 @@ margin-left: auto;
 margin-right: auto;
 }
 
-#banner, #export {
+#banner, div.footerbar {
     width: 706px;
     margin-left: auto;
     margin-right: auto;
@@ -80,8 +93,8 @@ table.details tr td{
     border: 2px solid #ccc;
 }
 
-ul.menu li:hover, ul.menu li:hover a {
-    color: #555;
+ul.menu li:hover, ul.menu li:hover a, ul.menu li.current-tab, ul.menu li.current-tab a {
+    color: #666;
     background-color: white;
 }
 
@@ -92,12 +105,7 @@ ul.menu a {
     font-weight: bold;
 }
 
-ul.menu li.current-tab, ul.menu li.current-tab a {
-    background-color: white;
-    color: #555;
-}
-
-td.location {
+td.value {
     font-family: monospace;
 }
 
@@ -109,10 +117,17 @@ width: 175px;
 #heading {
 padding-left: 25px;
 padding-right: 30px;
+background-color: white;
+padding-bottom: 10px;
+border: 3px solid #aaa;
+border-bottom: none;
 }
 
+div.content-end {
+    border-bottom: 3px solid #aaa;
+}
 
-#heading h1, #heading h3 {
+#heading h1, #heading h3, p {
     margin: 5px;
     font-family: 'Judson', arial, serif;
     font-weight: 700;
@@ -233,9 +248,14 @@ list-style-type: none;
 margin-bottom: 5px;
 }
 
+#banner {
+    margin-top: 20px;
+}
+
 p {
 line-height: 1.5em;
 margin: 1.6em 0;
+font-size: 16px;
 }
 
 code, tt {

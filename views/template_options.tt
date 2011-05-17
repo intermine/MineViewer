@@ -1,0 +1,11 @@
+    {
+        baseUrl: '[% settings.mine_base_url %]',
+        createCellContent: function(cell) {
+            var a = document.createElement("a");
+            var base = "[% proxy.uri_for('/') %]";
+            var type = cell["class"];
+            a.href = base + type + "/id/" + cell.id;
+            a.innerHTML = cell.value;
+            return a;
+        }
+    }

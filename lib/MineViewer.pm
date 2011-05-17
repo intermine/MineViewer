@@ -6,6 +6,8 @@ use Dancer::Plugin::ProxyPath;
 # For caching results we do not expect to change
 use Attribute::Memoize;
 
+use Lingua::EN::Inflect qw(PL_N);
+
 =head1 VERSION
 
 Software release version: 0.01
@@ -57,6 +59,24 @@ get '/templates' => sub {
     return template 'templates';
 };
 
+sub pluraliser :Memoize {
+    my $term = shift;
+    my $lc_term = lc($term);
+    my $lc_plural = PL_N($lc_term);
+    my @term_chars = split(//, $lc_term);
+    my @lc_plural_chars = split(//, $lc_plural);
+    my $last_same;
+    for my $i (0 .. $#term_chars) {
+        if ($term_chars[$i] eq $lc_plural_chars[$i]) {
+            $last_same = $i + 1;
+        } else {
+            last;
+        }
+    }
+
+    return substr($term, 0, $last_same) . substr($lc_plural, $last_same);
+}
+
 get '/lists' => sub {
 
     my @lists = map {$service->list($_)} @$list_names;
@@ -71,6 +91,7 @@ get '/lists' => sub {
         lists => [@lists],
         gff_uri => proxy->uri_for('/list/' . $lists[0]->name . '.gff3'),
         fasta_uri => proxy->uri_for('/list/' . $lists[0]->name . '.fasta'),
+        pluraliser => \&pluraliser,
     };
 };
 
@@ -134,6 +155,7 @@ get '/list/:list' => sub {
         lists => [@lists],
         gff_uri => proxy->uri_for('/list/' . $lists[0]->name . '.gff3'),
         fasta_uri => proxy->uri_for('/list/' . $lists[0]->name . '.fasta'),
+        pluraliser => \&pluraliser,
     };
 
 };
@@ -233,15 +255,29 @@ get '/gene/:id' => sub {
     };
 };
 
+get '/:type/id/:id' => sub {
+    my $type = ucfirst(params->{'type'});
+    my $query = $service->new_query(class => $type);
+    $query->add_views('*');
+    add_extra_views_to_query($type, $query);
+    $query->add_constraint('id', '=', params->{id});
+    return do_item_report($query);
+};
+
 get '/:type/:id' => sub {
     my $type = ucfirst(params->{'type'});
     my $query = get_item_query($type, params->{'id'});
+    return do_item_report($query);
+};
 
+sub do_item_report {
+    my $query = shift;
     my ($item) = $query->results(as => 'hashrefs')
-        or return template item_error => params;
+        or return template item_error => {query => $query, params};
     my ($obj) = $query->results(RESULT_OPTIONS)
-        or return template item_error => params;
+        or return template item_error => {query => $query, params};
 
+    my $type = ucfirst(params->{'type'});
     my $keys = get_class_keys_for($type);
     my $identifier = join(';', map { defined($item->{"$type.$_"}) ? $item->{"$type.$_"} : ''} 
                             @$keys);
@@ -258,26 +294,28 @@ get '/:type/:id' => sub {
 
     return template item => {
         item        => $item, 
-        templates => get_subtemplate_for_type($type),
+        templates => get_templates($type),
         obj         => $obj,
         identifier   => $identifier, 
         displayname => $displayname,
         comments    => [@comments],
     };
-};
+}
 
-sub get_subtemplate_for_type :Memoize {
-    my $type = lc(shift);
-    if (-f "views/${type}_templates.tt") {
-        return "${type}_templates.tt";
-    }
+
+sub get_templates :Memoize {
+    my $type = shift;
+    opendir(my $dir, 'views');
     my $cd = $service->model->get_classdescriptor_by_name(ucfirst($type));
-    for my $parent ($cd->parental_class_descriptors) {
-        if (my $t = get_subtemplate_for_type($parent)) {
-            return $t;
+    my @templates;
+    for (readdir($dir)) {
+        next unless /_templates\.tt/;
+        my ($file_type) = map {ucfirst} split(/_/);
+        if ($cd->sub_class_of($file_type)) {
+            push @templates, $_;
         }
     }
-    return '';
+    return [@templates];
 }
 
 sub get_user_comments {

@@ -20,6 +20,6 @@ $(function() {IMBedding.loadTemplate(
         code2:         "B"
     },
     '#employees-placeholder',
-    {baseUrl: '[% settings.mine_base_url %]'}
+    [% INCLUDE template_options.tt %]
 );});
 </script>

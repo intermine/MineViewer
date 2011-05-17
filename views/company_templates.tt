@@ -21,7 +21,7 @@ $(function() {
 
         },
         '#[% t %]-placeholder',
-        {baseUrl: '[% settings.mine_base_url %]'}
+        [% INCLUDE template_options.tt %]
     );
     [% END %]
 });

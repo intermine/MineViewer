@@ -22,6 +22,7 @@ project:
     title: "MineView Test"
     subtitle: "A test of the mine-viewer webapp"
 
+list_column_width: 3
 
 service_args:
     - "squirrel.flymine.org/intermine-test"
@@ -34,6 +35,7 @@ gene_list_names:
     - "Umlaut holders"
     - "Admin departments"
     - "Bankrupt soon"
+    - "Rich ladies"
 
 mine_base_url: "http://squirrel.flymine.org/intermine-test"
 
@@ -43,13 +45,21 @@ class_keys:
     Department:
         - "name"
         - "company.name"
+    Address:
+        - "address"
 
 additional_summary_fields:
     Department:
         - "company.name"
+        - "manager.name"
     Employee:
         - "department.name"
         - "department.company.name"
     Manager:
         - "department.name"
         - "department.company.name"
+    Company:
+        - "CEO.name"
+        - "address.address"
+    CEO:
+        - "company.name"

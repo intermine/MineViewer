@@ -22,8 +22,6 @@ charset: "UTF-8"
 # simple: default and very basic template engine
 # template_toolkit: TT
 
-#template: "simple"
-
 template: "template_toolkit"
 engines:
   template_toolkit:
@@ -37,6 +35,8 @@ plugins:
             dsn: "dbi:SQLite:dbname=./data/usercomments.db"
             options:
                 sqlite_unicode: 1
+
+list_column_width: 5
 
 update_interval: 600
 

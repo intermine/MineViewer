@@ -6,7 +6,7 @@
     [% ELSE %]
         <select id="lists">
         [% FOREACH list IN lists %]
-            <option value="[% list.name %]">[% list.name %] ([% list.size %] [% list.type %]s) </option>
+            <option value="[% list.name %]">[% list.name %] ([% list.size %] [% pluraliser(list.type) %]) </option>
         [% END %]
         </select>
     [% END %]
@@ -23,7 +23,7 @@
                 [% END %]
             [% END %]
             [% itemid = values.join(';') %]
-            [% type = lists.0.type FILTER lower %]
+            [% type = lists.0.type %]
 <li><a href="[% proxy.uri_for('/' _ type _ '/' _ itemid) %]">[% itemname %]</a></li>
         [% END %]
     </ul>
@@ -34,13 +34,22 @@
 
 <script type="text/javascript">
 jQuery(function() {
-    jQuery('#list-items').makeacolumnlists({cols: 5, colWidth: 0, equalHeight: true, startN: 1});
+    var colWidth = [% settings.list_column_width %];
+    var listname = jQuery('#lists option:selected').val();
+    jQuery('#list-item-box').load("[% proxy.uri_for('/list/') %]" + escape(listname) + ' #list-items',
+        null, function() {
+        jQuery('#list-items').makeacolumnlists({
+            cols: colWidth, colWidth: 0, 
+            equalHeight: true, startN: 1
+            })
+        });
+
     jQuery('#lists').change(function() {
         var listname = jQuery('#lists option:selected').val();
         jQuery('#list-item-box').load("[% proxy.uri_for('/list/') %]" + escape(listname) + ' #list-items',
             null, function() {
             jQuery('#list-items').makeacolumnlists({
-                cols: 5, colWidth: 0, 
+                cols: colWidth, colWidth: 0, 
                 equalHeight: true, startN: 1
                 })
             });

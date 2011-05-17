@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
-<title>AlzheimersMine</title>
+<title>[% settings.project.title %]</title>
 <link rel="stylesheet" href="[% proxy.uri_for('/css/style.css') %]"/>
 
 <!-- Grab Google CDN's jQuery. fall back to local if necessary -->
@@ -23,6 +23,7 @@
 <link href='http://fonts.googleapis.com/css?family=Judson:bold' rel='stylesheet' type='text/css'>
 
 <script type="text/javascript" src="[% proxy.uri_for('/javascripts/jquery-ui-1.8.12.custom.min.js') %]"></script>
+<script type="text/javascript" src="[% proxy.uri_for('/javascripts/jquery.history.js') %]"></script>
 <link rel="stylesheet" type="text/css" href="[% proxy.uri_for('/css/custom-theme/jquery-ui-1.8.12.custom.css') %]">
 <link rel="stylesheet" type="text/css" href="[% proxy.uri_for('/css/table.css') %]">
 

@@ -1,6 +1,6 @@
 
 body {
-font-family: 'Linux Libertine', Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
+font-family: 'Droid Serif', Georgia, 'Linux Libertine', Palatino, 'Palatino Linotype', 'Book Antiqua', 'Times New Roman', serif;
 margin: 0;
 margin-bottom: 25px;
 padding: 0;
@@ -38,11 +38,9 @@ div.placeholder-text {
     font-size: 14px;
 }
 
-
-
 #page {
 background-color: #ddd;
-width: 750px;
+max-width: 750px;
 margin: auto;
 margin-left: auto;
 padding-left: 0px;
@@ -55,13 +53,13 @@ border: 3px solid #aaa;
 border-top: none;
 border-bottom: none;
 padding: 25px;
-width: 650px;
+max-width: 650px;
 margin-left: auto;
 margin-right: auto;
 }
 
 #banner, div.footerbar {
-    width: 706px;
+    max-width: 706px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -69,6 +67,10 @@ margin-right: auto;
 .summary {
     background-color: #ddd;
     vertical-align: top;
+}
+
+input[type=text] {
+    width: 80%;
 }
 
 ul.menu {
@@ -100,13 +102,23 @@ ul.menu li:hover, ul.menu li:hover a, ul.menu li.current-tab, ul.menu li.current
 
 ul.menu a {
     color: white;
-    font-family: sans-serif;
+    font-family: 'Droid Sans', 'Helvetica', sans-serif;
     text-decoration: none;
     font-weight: bold;
 }
 
+td.key, td.value {
+    font-family: "Droid Sans", Helvetica, "trebuchet MS", sans-serif;
+}
+
 td.value {
-    font-family: monospace;
+    font-family: "Droid Sans", Helvetica, "trebuchet MS", sans-serif;
+}
+
+/* Styles for particular fields */
+td.value.salary, td.value.seniority, td.value.fullTime {
+    font-family: "Droid Sans Mono", monospace;
+    text-align: right;
 }
 
 #sidebar {
@@ -129,7 +141,7 @@ div.content-end {
 
 #heading h1, #heading h3, p {
     margin: 5px;
-    font-family: 'Judson', arial, serif;
+    font-family:  'Droid Serif', 'Judson', 'Times New Roman', serif;
     font-weight: 700;
 }
 

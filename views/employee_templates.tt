@@ -14,6 +14,6 @@ $(function() {IMBedding.loadTemplate(
         code1:         "A"
     },
     '#colleague-placeholder',
-    {baseUrl: '[% settings.mine_base_url %]'}
+    [% INCLUDE template_options.tt %]
 );});
 </script>

@@ -60,7 +60,15 @@ function loadUserTemplate() {
         baseUrl: "[% settings.mine_base_url %]",
         errorHandler: complainAboutName,
         openOnLoad: true,
-        throbberSrc: "[% proxy.uri_for('/images/genericThrobber.gif') %]"
+        throbberSrc: "[% proxy.uri_for('/images/genericThrobber.gif') %]",
+        createCellContent: function(cell) {
+            var a = document.createElement("a");
+            var base = "[% proxy.uri_for('/') %]";
+            var type = cell["class"];
+            a.href = base + type + "/id/" + cell.id;
+            a.innerHTML = cell.value;
+            return a;
+        }
     };
 
     for (x in formValues) {
@@ -144,64 +152,67 @@ function getOpInput(counter, cons, includeISA) {
     return opInput;
 }
 
+var displayTemplate = function(selectedTemplate) {
+    tempSpec = $('#templateParameters');
+    tempSpec.empty();
+    var template = window.availableTemplates[selectedTemplate];
+    var title = document.createElement("h3");
+    title.innerHTML = template.title.replace('-->', '&rarr;');
+    tempSpec.append(title);
+    var table = document.createElement("table");
+    for (var i = 0; i < template.constraints.length; i++) {
+        var row = document.createElement("tr");
+        table.appendChild(row);
+        cons = template.constraints[i];
+        counter = i + 1;
+
+        var cell1 = document.createElement("td");
+        var nameInput = document.createElement("input");
+        nameInput.type = "hidden";
+        nameInput.name = "constraint" + counter;
+        nameInput.value = cons.path;
+        cell1.appendChild(nameInput);
+        var label = document.createElement("label");
+        label.className = "text-input";
+        label["for"] = "op" + counter;
+        label.innerHTML = cons.path + ": ";
+        cell1.appendChild(label);
+        row.appendChild(cell1);
+
+        var cell2 = document.createElement("td");
+        var opInput = getOpInput(counter, cons, false);
+        cell2.appendChild(opInput);
+        row.appendChild(cell2);
+
+        var cell3 = document.createElement("td");
+        var valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.className = "text-input";
+        valueInput.name = "value" + counter;
+        valueInput.value = cons.value;
+        cell3.appendChild(valueInput);
+        $(opInput).change(function() {
+            if ($(this).val().match(/NULL/)) {
+                valueInput.disabled = true;
+            } else {
+                valueInput.disabled = false;
+            }
+        });
+        var codeInput = document.createElement("input");
+        codeInput.type = "hidden";
+        codeInput.name = "code" + counter;
+        codeInput.value = cons.code;
+        cell3.appendChild(codeInput);
+        row.appendChild(cell3);
+
+    }
+    tempSpec.append(table);
+};
+
 var getSelectHandler = function(templates) {
     return function(event, ui) {
         if (ui.item) {
-            var selectedTemplate = ui.item.value;
-            tempSpec = $('#templateParameters');
-            tempSpec.empty();
-            var template = templates[selectedTemplate];
-            var title = document.createElement("h3");
-            title.innerHTML = template.title.replace('-->', '&rarr;');
-            tempSpec.append(title);
-            var table = document.createElement("table");
-            for (var i = 0; i < template.constraints.length; i++) {
-                var row = document.createElement("tr");
-                table.appendChild(row);
-                cons = template.constraints[i];
-                counter = i + 1;
-
-                var cell1 = document.createElement("td");
-                var nameInput = document.createElement("input");
-                nameInput.type = "hidden";
-                nameInput.name = "constraint" + counter;
-                nameInput.value = cons.path;
-                cell1.appendChild(nameInput);
-                var label = document.createElement("label");
-                label.className = "text-input";
-                label["for"] = "op" + counter;
-                label.innerHTML = cons.path + ": ";
-                cell1.appendChild(label);
-                row.appendChild(cell1);
-
-                var cell2 = document.createElement("td");
-                var opInput = getOpInput(counter, cons, false);
-                cell2.appendChild(opInput);
-                row.appendChild(cell2);
-
-                var cell3 = document.createElement("td");
-                var valueInput = document.createElement("input");
-                valueInput.type = "text";
-                valueInput.className = "text-input";
-                valueInput.name = "value" + counter;
-                valueInput.value = cons.value;
-                cell3.appendChild(valueInput);
-                $(opInput).change(function() {
-                    if ($(this).val().match(/NULL/)) {
-                        valueInput.disabled = true;
-                    } else {
-                        valueInput.disabled = false;
-                    }
-                });
-                var codeInput = document.createElement("input");
-                codeInput.type = "hidden";
-                codeInput.name = "code" + counter;
-                codeInput.value = cons.code;
-                cell3.appendChild(codeInput);
-                row.appendChild(cell3);
-
-            }
-            tempSpec.append(table);
+            displayTemplate(ui.item.value);
         }
     };
 };
@@ -212,7 +223,6 @@ var loadTemplateInfo = function(url) {
         callbackParameter: "callback",
         data: {},
         success: function( data ) {
-            console.log(data);
             var templates = data.templates;
             window.availableTemplates = templates;
             var names = [];
@@ -228,6 +238,7 @@ var loadTemplateInfo = function(url) {
                 delay: 0,
                 focus: function(event, ui) {
                     $('#templateName').val(ui.item.value);
+                    window.location.hash = ui.item.value;
                     return false;
                 },
                 select: getSelectHandler(availableTemplates)
@@ -238,6 +249,11 @@ var loadTemplateInfo = function(url) {
                                      .append("<a><strong>" + item.value + "</strong><br/><em>" + item.label + "</em></a>")
                                      .appendTo(ul);
             };
+            var currenttemplate = window.location.hash.substr(1);
+            if (currenttemplate && templates[currenttemplate]) {
+                $('#templateName').val(currenttemplate);
+                displayTemplate(currenttemplate);
+            }
         }
     });
 };

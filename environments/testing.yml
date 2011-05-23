@@ -29,6 +29,8 @@ service_args:
     - 'intermine-test-user'
     - 'intermine-test-user-password'
 
+list_tag: "mineview-test"
+
 gene_list_names: 
     - "My-Favourite-Employees"
     - "The great unknowns"
@@ -48,6 +50,9 @@ class_keys:
     Address:
         - "address"
 
+never_show: 
+    - 'name'
+
 additional_summary_fields:
     Department:
         - "company.name"
@@ -55,9 +60,7 @@ additional_summary_fields:
     Employee:
         - "department.name"
         - "department.company.name"
-    Manager:
-        - "department.name"
-        - "department.company.name"
+        - "address.address"
     Company:
         - "CEO.name"
         - "address.address"

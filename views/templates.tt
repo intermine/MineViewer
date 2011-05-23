@@ -3,19 +3,21 @@
 
 <div id="content">
 <form id="template-form">
-    <p><label for="templateName">Template Name: </label>
-    <input spellcheck="false" size="50" type="text" name="name" id="templateName" placeholder="Enter a template Name" /></p>
+    <p><label for="templateName">Tool Name: </label>
+    <input spellcheck="false" type="text" name="name" id="templateName" placeholder="Enter a template Name" /></p>
     <div id="templateParameters"></div>
     <br/>
-    <input type="button" name="loadTemplate" value="Load Template" onclick="loadUserTemplate()" />
+    <input type="button" name="loadTemplate" value="Load Results" onclick="loadUserTemplate()" />
 </form>
 
-<div id="templateplaceholder"><p>The template results will go here</p></div>
+<div id="templateplaceholder"><p>The results will go here</p></div>
 <div id="datatableplaceholder"></div>
 
 </div>
 
 <div class="content-end footerbar"></div>
+
+[% INCLUDE list_creation_popup.tt %]
 
 <script type="text/javascript">
 
@@ -55,21 +57,14 @@ function loadUserTemplate() {
     }
 
     var data = {size: 10};
+    var opts = [% INCLUDE template_options.tt %];
 
-    var opts = {
+    jQuery.extend(opts, {
         baseUrl: "[% settings.mine_base_url %]",
         errorHandler: complainAboutName,
         openOnLoad: true,
         throbberSrc: "[% proxy.uri_for('/images/genericThrobber.gif') %]",
-        createCellContent: function(cell) {
-            var a = document.createElement("a");
-            var base = "[% proxy.uri_for('/') %]";
-            var type = cell["class"];
-            a.href = base + type + "/id/" + cell.id;
-            a.innerHTML = cell.value;
-            return a;
-        }
-    };
+    });
 
     for (x in formValues) {
         name = formValues[x].name;
@@ -77,36 +72,39 @@ function loadUserTemplate() {
         data[name] = value;
     }
 
-    IMBedding.loadTemplate(data, '#templateplaceholder', opts);
+    [% IF settings.table_style == "datatables" %]
+        data.format = "jsonpdatatable";
+        delete(data.size);
+        var callback = function(resultSet) {
+            var views = [];
+            for (view in resultSet.views) {
+                var parts = resultSet.views[view].split('.');
+                var lastTwo = parts.slice(parts.length - 2, parts.length);
+                views.push({sTitle: lastTwo.join(" ")});
+            }
+            jQuery('#datatableplaceholder').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="dtable"></table>' );
 
-    data.format = "jsonpdatatable";
-    delete(data.size);
-    var callback = function(resultSet) {
-        var views = [];
-        for (view in resultSet.views) {
-            var parts = resultSet.views[view].split('.');
-            var lastTwo = parts.slice(parts.length - 2, parts.length);
-            views.push({sTitle: lastTwo.join(" ")});
-        }
-        jQuery('#datatableplaceholder').html( '<table cellpadding="0" cellspacing="0" border="0" class="display" id="dtable"></table>' );
-
-        jQuery('#dtable').dataTable({
-            aaData: resultSet.results,
-            aoColumns: views,
-            bJQueryUI: true
-        });
-        var ul = document.createElement('ul');
-        ul.className = "menu";
-        jQuery('#datatableplaceholder').append(ul);
-        jQuery(ul).append('<li>Toggle:</li>');
-        for (view in views) {
-            jQuery(ul).append('<li id="coltoggler' + view + '"><a onclick="toggleColumn(' + view + ');">' + views[view].sTitle + '</a></li>');
-        }
-    };
-    IMBedding.loadTemplate(data, callback, opts);
+            jQuery('#dtable').dataTable({
+                aaData: resultSet.results,
+                aoColumns: views,
+                bJQueryUI: true
+            });
+            var ul = document.createElement('ul');
+            ul.className = "menu";
+            jQuery('#datatableplaceholder').append(ul);
+            jQuery(ul).append('<li>Toggle:</li>');
+            for (view in views) {
+                jQuery(ul).append('<li id="coltoggler' + view + '"><a onclick="toggleColumn(' + view + ');">' + views[view].sTitle + '</a></li>');
+            }
+        };
+        IMBedding.loadTemplate(data, callback, opts);
+    [% ELSE %]
+        IMBedding.loadTemplate(data, '#templateplaceholder', opts);
+    [% END %]
          
 };
 
+[% IF settings.table_style == "datatables" %]
 function toggleColumn( index ) {
     /* Get the DataTables object again - this is not a recreation, just a get of the object */
     var table = $('#dtable').dataTable();
@@ -119,6 +117,7 @@ function toggleColumn( index ) {
         jQuery('#coltoggler' + index).removeClass("current-tab");
     }
 }
+[% END %]
 
 var operators = {
     "=": "equals",
@@ -221,9 +220,10 @@ var loadTemplateInfo = function(url) {
     $.jsonp({
         url: url,
         callbackParameter: "callback",
-        data: {},
+        data: { format: 'jsonp' },
         success: function( data ) {
-            var templates = data.templates;
+            // Some services have this response structure broken.
+            var templates = data.templates.templates || data.templates;
             window.availableTemplates = templates;
             var names = [];
             for (name in templates) {
@@ -290,7 +290,7 @@ var loadModel = function(url) {
 var baseUrl = "[% settings.mine_base_url %]";
 
 $(function() {
-    loadTemplateInfo(baseUrl + "/service/templates/jsonp");
+    loadTemplateInfo(baseUrl + "/service/templates");
 //    loadModel(baseUrl + "/service/model/jsonp");
 });
 </script>

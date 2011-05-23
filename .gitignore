@@ -1,0 +1,8 @@
+logs
+*.db
+.svn
+_build
+blib
+Build
+MYMETA.yml
+*.zip

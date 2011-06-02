@@ -6,7 +6,9 @@
     [% FOREACH list IN lists %]
         [% list_name = list.name %]
         <option value="[% list.name %]"
-            [% IF contained_in.$list_name %] disabled [% END %] >
+            [% IF contained_in.$list_name or not list.is_authorized %] 
+                disabled 
+            [% END %] >
             [% list.name %] ([% list.size %] [% pluraliser(list.type) %]) 
         </option>
     [% END %]
@@ -34,7 +36,7 @@ jQuery(function() {
                             description: $('#newlistdesc').val(),
                             type: "[% obj.class %]"
                         };
-                        $.post("[% proxy.uri_for('/create_new_list') %]", data, handleResults, "json");
+                        $.post("[% proxy.uri_for('/create_new_list') %]", data, handleListResults, "json");
                         $(this).dialog('close');
                     },
                     Cancel: function() {$(this).dialog('close');}

@@ -54,7 +54,7 @@ before sub {
     try {
         service->refresh_lists;
     } catch {
-        send_error("Could not connect to service", 500);
+        send_error("Could not connect to service: " . to_dumper(setting('service_args')), 500);
     }
 };
 

@@ -1,4 +1,6 @@
 
+appname: "MineView"
+
 # configuration file for development environment
 
 # the logger engine to use

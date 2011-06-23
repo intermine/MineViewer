@@ -7,3 +7,4 @@ blib
 Build
 MYMETA.yml
 *.zip
+*.swp

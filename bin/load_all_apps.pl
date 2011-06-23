@@ -1,4 +1,5 @@
 use Dancer ':syntax';
+use Dancer::App;
 use Plack::Builder;
 use Cwd;
 

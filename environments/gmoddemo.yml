@@ -58,7 +58,7 @@ gene_list_names:
     - "gmoddemo"
     - "example"
 
-mine_base_url: "http://www.flymine.org"
+mine_base_url: "http://www.flymine.org/query"
 
 class_keys:
     Default: 

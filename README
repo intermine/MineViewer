@@ -1,0 +1,41 @@
+Perl Demonstration Web-Application
+==================================
+
+This project represents a Perl based web-application
+which provides a limited front-end to an InterMine 
+data-warehouse. It is intended to demonstrate the capacity to 
+access genomic data stored remotely at an externally 
+administered data-store, accessed through webservices, 
+and then integrate this data with locally stored user
+curated comments. 
+
+Requirements
+------------
+
+* Perl
+* SQLite (local data store)
+* Dancer (web-framework)
+* DBIx::Class (database ORM)
+* Webservice::InterMine (webservice client)
+
+Setting Up
+----------
+
+Install the Perl dependencies:
+
+  perl Build.PL 
+  ./Build install-deps
+
+Set up the local database:
+
+  sqlite3 data/usercomments.db < data/schema.sql
+
+Set up your config file - see "environments/gmoddemo.yml" for example.
+
+Running
+-------
+
+  perl bin/app.pl -e gmoddemo
+
+This will start a webapp accessible at localhost:3000. Change the environment 
+flag to change the settings.

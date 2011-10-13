@@ -115,6 +115,12 @@ sub pluraliser : Memoize {
     return substr( $term, 0, $last_same ) . substr( $lc_plural, $last_same );
 }
 
+=head2 Get the lists available to the user
+
+Get the lists that this site will display to the user.
+
+=cut
+
 sub get_lists {
     my $list_names      = setting('gene_list_names');
     my %lists =
